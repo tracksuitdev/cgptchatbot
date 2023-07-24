@@ -16,24 +16,25 @@
     #define MKDIR(path) mkdir(path, 0777)
 #endif
 
-static const int MAX_FILE_PATH = 257;
-static const char DATA_DIR[] = ".cgptchatbot";
+const char CGPT_DATA_DIR[] = ".cgptchatbot";
+const int CGPT_MAX_FILE_PATH = 1024;
+
 static const char DATA_FILE_NAME[] = "config.txt";
 static const int MAX_LINE_LENGTH = 1000;
 
 void data_dir_path(char *path) {
     char *home = getenv("HOME");
-    snprintf(path, MAX_FILE_PATH, "%s/%s", home, DATA_DIR);
+    snprintf(path, CGPT_MAX_FILE_PATH, "%s/%s", home, CGPT_DATA_DIR);
 }
 
 bool data_dir_exists() {
 #ifdef _WIN32
-    char dir_path[MAX_FILE_PATH];
+    char dir_path[CGPT_MAX_FILE_PATH];
     data_dir_path(dir_path);
     DWORD attrib = GetFileAttributes(dir_path);
     return (attrib != INVALID_FILE_ATTRIBUTES && (attrib & FILE_ATTRIBUTE_DIRECTORY));
 #else
-    char dir_path[MAX_FILE_PATH];
+    char dir_path[CGPT_MAX_FILE_PATH];
     data_dir_path(dir_path);
     struct stat st;
     return (stat(dir_path, &st) == 0 && S_ISDIR(st.st_mode));
@@ -41,7 +42,7 @@ bool data_dir_exists() {
 }
 
 static inline FILE *get_data_file(char *mode) {
-    char file_path[MAX_FILE_PATH];
+    char file_path[CGPT_MAX_FILE_PATH];
     data_dir_path(file_path);
     strcat(file_path, "/");
     strcat(file_path, DATA_FILE_NAME);
@@ -55,7 +56,7 @@ void appdata_free(APPDATA *appdata) {
 }
 
 CREATE_DIR_STATUS create_data_dir() {
-    char dir_path[MAX_FILE_PATH];
+    char dir_path[CGPT_MAX_FILE_PATH];
     data_dir_path(dir_path);
     if (MKDIR(dir_path) == 0) {
         return CREATE_DIR_SUCCESS;
@@ -84,10 +85,10 @@ bool remove_dir(const char *path) {
 }
 
 bool remove_data_dir() {
-    char dir_path[MAX_FILE_PATH];
+    char dir_path[CGPT_MAX_FILE_PATH];
     data_dir_path(dir_path);
 
-    char file_path[MAX_FILE_PATH];
+    char file_path[CGPT_MAX_FILE_PATH];
 
     strcpy(file_path, dir_path);
     strcat(file_path, "/");

@@ -116,9 +116,10 @@ void test_create_completion() {
     TEST_ASSERT_EQUAL_STRING("text_completion", completion->object);
     TEST_ASSERT_EQUAL_STRING("curie:ft-user-1234", completion->model);
     TEST_ASSERT_EQUAL_INT(1612211368, completion->created);
-    TEST_ASSERT_EQUAL_STRING("Once upon a time", completion->choices[0]->text);
     TEST_ASSERT_EQUAL_STRING("length", completion->choices[0]->finish_reason);
     TEST_ASSERT_EQUAL_INT(0, completion->choices[0]->index);
+    TEST_ASSERT_EQUAL_STRING("Hello", completion->choices[0]->message->content);
+    TEST_ASSERT_EQUAL_STRING("system", completion->choices[0]->message->role);
     openai_completion_free(completion);
     openai_free(api);
 }
@@ -127,7 +128,7 @@ int main() {
     MockServerRequestHandlerData *hd[] = {
             ms_create_handler_data("/models", "{\"data\": [{\"id\": \"curie:ft-user-1234\", \"object\": \"user\", \"owned_by\": \"user_1234\", \"permissions\": [\"read\", \"write\"]}, {\"id\": \"curie:ft-user-1234\", \"object\": \"user\", \"owned_by\": \"user_1234\", \"permissions\": [\"read\", \"write\"]}], \"object\": \"list\"}", 200),
             ms_create_handler_data("/models/curie:ft-user-1234", "{\"id\": \"curie:ft-user-1234\", \"object\": \"user\", \"owned_by\": \"user_1234\", \"permissions\": [\"read\", \"write\"]}", 200),
-            ms_create_handler_data("/chat/completions", "{\"id\": \"cmpl-1234\", \"object\": \"text_completion\", \"created\": 1612211368, \"model\": \"curie:ft-user-1234\", \"choices\": [{\"text\": \"Once upon a time\", \"index\": 0, \"logprobs\": null, \"finish_reason\": \"length\"}]}", 200),
+            ms_create_handler_data("/chat/completions", "{\"id\": \"cmpl-1234\", \"object\": \"text_completion\", \"created\": 1612211368, \"model\": \"curie:ft-user-1234\", \"choices\": [{\"text\": \"Once upon a time\", \"index\": 0, \"logprobs\": null, \"finish_reason\": \"length\", \"message\": {\"content\": \"Hello\", \"role\": \"system\"}]}", 200),
             NULL
     };
 

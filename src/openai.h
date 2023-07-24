@@ -44,16 +44,21 @@ typedef struct {
 } OpenAiMessage;
 OpenAiMessage *openai_message_new();
 void openai_message_free(OpenAiMessage *message);
+void openai_message_assign_from_json(OpenAiMessage *message, cJSON *message_json);
+void openai_message_assign_from_json_string(OpenAiMessage *message, char *json_string);
+OpenAiMessage *openai_message_from_json_string(char* json_string);
+OpenAiMessage *openai_message_from_json(cJSON *message_json);
+cJSON *openai_message_to_json(OpenAiMessage *message);
 
 typedef struct {
     int index;
-    OpenAiMessage message;
+    OpenAiMessage *message;
     char *finish_reason;
-    char *text;
     int logprobs;
 } OpenAiChoice;
 OpenAiChoice *openai_choice_new();
 void openai_choice_free(OpenAiChoice *choice);
+cJSON *openai_choice_to_json(OpenAiChoice *choice);
 
 typedef struct {
    int prompt_tokens;
@@ -61,6 +66,7 @@ typedef struct {
    int total_tokens;
 } OpenAiUsage;
 OpenAiUsage *openai_usage_new();
+
 
 typedef struct {
     char *id;
@@ -72,6 +78,12 @@ typedef struct {
 } OpenAiCompletion;
 OpenAiCompletion *openai_completion_new();
 void openai_completion_free(OpenAiCompletion *completion);
+void openai_completion_assign_from_json(OpenAiCompletion *completion, cJSON *completion_json);
+void openai_completion_assign_from_json_string(OpenAiCompletion *completion, char *json_string);
+OpenAiCompletion *openai_completion_from_json_string(char* json_string);
+OpenAiCompletion *openai_completion_from_json(cJSON *completion_json);
+cJSON *openai_completion_to_json(OpenAiCompletion *completion);
+
 
 OPENAI_API *openai_init(const char *url, const char *api_key);
 void openai_free(OPENAI_API *openai_api);

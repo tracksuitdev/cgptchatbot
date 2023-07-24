@@ -2,6 +2,9 @@
 #define CGPTCHATBOT_APPDATA_H
 #include <stdbool.h>
 
+extern const char CGPT_DATA_DIR[];
+extern const int CGPT_MAX_FILE_PATH;
+
 typedef struct {
     char *api_key;
 } APPDATA;
@@ -12,6 +15,8 @@ typedef enum {
     CREATE_DIR_ERROR,
     CREATE_DIR_ALREADY_EXISTS
 } CREATE_DIR_STATUS;
+
+void data_dir_path(char *path);
 
 bool data_dir_exists();
 CREATE_DIR_STATUS create_data_dir();

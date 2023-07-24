@@ -29,33 +29,6 @@ static char *concat(int num_args, const char *s, ...) {
     return result;
 }
 
-static char* string_at(cJSON *json, char *key) {
-    cJSON *value = cJSON_GetObjectItem(json, key);
-    if (value != NULL) {
-        return strdup(value->valuestring);
-    } else {
-        return NULL;
-    }
-}
-
-static int int_at(cJSON *json, char *key) {
-    cJSON *value = cJSON_GetObjectItem(json, key);
-    if (value != NULL) {
-        return (int) value->valuedouble;
-    } else {
-        return 0;
-    }
-}
-
-static long long_at(cJSON *json, const char *key) {
-    cJSON *value = cJSON_GetObjectItem(json, key);
-    if (value != NULL) {
-        return (long) value->valuedouble;
-    } else {
-        return 0;
-    }
-}
-
 OPENAI_API *openai_init(const char *url, const char *api_key) {
     char *auth_header = concat(2, AUTH_HEADER, api_key);
     char *models_url = concat(2,url, MODELS);
@@ -103,8 +76,8 @@ OpenAiModelList *openai_model_list_new() {
 
 void openai_model_list_free(OpenAiModelList *model_list) {
     free_array((void **) model_list->models);
-    FREE(model_list->object);
-    FREE(model_list);
+    FREE(model_list->object)
+    FREE(model_list)
     model_list = NULL;
 }
 
@@ -128,16 +101,15 @@ void openai_message_free(OpenAiMessage *message) {
 OpenAiChoice *openai_choice_new() {
     OpenAiChoice *choice = malloc(sizeof(OpenAiChoice));
     choice->index = 0;
-    choice->message = *openai_message_new();
+    choice->message = openai_message_new();
     choice->finish_reason = NULL;
-    choice->text = NULL;
     choice->logprobs = 0;
     return choice;
 }
 
 void openai_choice_free(OpenAiChoice *choice) {
     FREE(choice->finish_reason)
-    FREE(choice->text)
+    openai_message_free(choice->message);
     FREE(choice)
 }
 
@@ -199,9 +171,9 @@ static struct curl_slist *get_headers(char *auth_header) {
 }
 
 void openai_model_assign_from_json(OpenAiModel *model, cJSON *model_json) {
-    model->id = string_at(model_json, "id");
-    model->object = string_at(model_json, "object");
-    model->owned_by = string_at(model_json, "owned_by");
+    model->id = cjson_string_at(model_json, "id");
+    model->object = cjson_string_at(model_json, "object");
+    model->owned_by = cjson_string_at(model_json, "owned_by");
     cJSON *permissions = cJSON_GetObjectItem(model_json, "permissions");
     int permissions_size = cJSON_GetArraySize(permissions);
     if (permissions != NULL && permissions_size > 0) {
@@ -249,7 +221,7 @@ void openai_model_list_assign_from_json(OpenAiModelList *model_list, cJSON *mode
     } else {
         model_list->models = NULL;
     }
-    model_list->object = string_at(model_list_json, "object");
+    model_list->object = cjson_string_at(model_list_json, "object");
 }
 
 void openai_model_list_assign_from_json_string(OpenAiModelList *model_list, char *json_string) {
@@ -267,15 +239,49 @@ OpenAiModelList *openai_model_list_from_json_string(char *json_string) {
 }
 
 
+void openai_message_assign_from_json(OpenAiMessage *message, cJSON *message_json) {
+    if (message_json == NULL) {
+        return;
+    }
+    message->role = cjson_string_at(message_json, "role");
+    message->name = cjson_string_at(message_json, "name");
+    message->function_call = cjson_string_at(message_json, "function_call");
+    message->content = cjson_string_at(message_json, "content");
+}
+
+void openai_message_assign_from_json_string(OpenAiMessage *message, char *message_json_string) {
+    cJSON *message_json = cJSON_Parse(message_json_string);
+    openai_message_assign_from_json(message, message_json);
+}
+
+OpenAiMessage *openai_message_from_json(cJSON* message_json) {
+    OpenAiMessage *message = openai_message_new();
+    openai_message_assign_from_json(message, message_json);
+    return message;
+}
+
+OpenAiMessage *openai_message_from_json_string(char *json_string) {
+    return openai_message_from_json(cJSON_Parse(json_string));
+}
+
+cJSON *openai_message_to_json(OpenAiMessage *message) {
+    cJSON *message_json = cJSON_CreateObject();
+    cJSON_AddStringToObject(message_json, "role", message->role);
+    cJSON_AddStringToObject(message_json, "name", message->name);
+    cJSON_AddStringToObject(message_json, "function_call", message->function_call);
+    cJSON_AddStringToObject(message_json, "content", message->content);
+    return message_json;
+}
 
 void openai_choice_assign_from_json(OpenAiChoice *choice, cJSON *choice_json) {
     if (choice_json == NULL) {
         return;
     }
-    choice->text = string_at(choice_json, "text");
-    choice->index = int_at(choice_json, "index");
-    choice->finish_reason = string_at(choice_json, "finish_reason");
-    choice->logprobs = int_at(choice_json, "logprobs");
+    cJSON *message = cJSON_GetObjectItem(choice_json, "message");
+    openai_message_assign_from_json(choice->message, message);
+    choice->index = cjson_int_at(choice_json, "index");
+    choice->finish_reason = cjson_string_at(choice_json, "finish_reason");
+    choice->logprobs = cjson_int_at(choice_json, "logprobs");
 }
 
 void openai_choice_assign_from_json_string(OpenAiChoice *choice, char *choice_json_string) {
@@ -293,13 +299,22 @@ OpenAiChoice *openai_choice_from_json_string(char *json_string) {
     return openai_choice_from_json(cJSON_Parse(json_string));
 }
 
+cJSON *openai_choice_to_json(OpenAiChoice *choice) {
+    cJSON *choice_json = cJSON_CreateObject();
+    cJSON_AddNumberToObject(choice_json, "index", choice->index);
+    cJSON_AddStringToObject(choice_json, "finish_reason", choice->finish_reason);
+    cJSON_AddNumberToObject(choice_json, "logprobs", choice->logprobs);
+    cJSON_AddItemToObject(choice_json, "message", openai_message_to_json(choice->message));
+    return choice_json;
+}
+
 void openai_usage_assign_from_json(OpenAiUsage *usage, cJSON *usage_json) {
     if (usage_json == NULL) {
         return;
     }
-    usage->prompt_tokens = int_at(usage_json, "prompt_tokens");
-    usage->completion_tokens = int_at(usage_json, "completion_tokens");
-    usage->total_tokens = int_at(usage_json, "total_tokens");
+    usage->prompt_tokens = cjson_int_at(usage_json, "prompt_tokens");
+    usage->completion_tokens = cjson_int_at(usage_json, "completion_tokens");
+    usage->total_tokens = cjson_int_at(usage_json, "total_tokens");
 }
 
 OpenAiUsage *openai_usage_from_json(cJSON* usage_json) {
@@ -312,14 +327,22 @@ OpenAiUsage *openai_usage_from_json_string(char *json_string) {
     return openai_usage_from_json(cJSON_Parse(json_string));
 }
 
+cJSON *openai_usage_to_json(OpenAiUsage *usage) {
+    cJSON *usage_json = cJSON_CreateObject();
+    cJSON_AddNumberToObject(usage_json, "prompt_tokens", usage->prompt_tokens);
+    cJSON_AddNumberToObject(usage_json, "completion_tokens", usage->completion_tokens);
+    cJSON_AddNumberToObject(usage_json, "total_tokens", usage->total_tokens);
+    return usage_json;
+}
+
 void openai_completion_assign_from_json(OpenAiCompletion *completion, cJSON *completion_json) {
     if (completion_json == NULL) {
         return;
     }
-    completion->id = string_at(completion_json, "id");
-    completion->object = string_at(completion_json, "object");
-    completion->created = long_at(completion_json, "created");
-    completion->model = string_at(completion_json, "model");
+    completion->id = cjson_string_at(completion_json, "id");
+    completion->object = cjson_string_at(completion_json, "object");
+    completion->created = cjson_long_at(completion_json, "created");
+    completion->model = cjson_string_at(completion_json, "model");
     cJSON *choices = cJSON_GetObjectItem(completion_json, "choices");
     cJSON *choice_element;
     int choices_size = cJSON_GetArraySize(choices);
@@ -340,6 +363,36 @@ void openai_completion_assign_from_json(OpenAiCompletion *completion, cJSON *com
     } else {
         completion->usage = NULL;
     }
+}
+
+void openai_completion_assign_from_json_string(OpenAiCompletion *completion, char *completion_json_string) {
+    cJSON *completion_json = cJSON_Parse(completion_json_string);
+    openai_completion_assign_from_json(completion, completion_json);
+}
+
+OpenAiCompletion *openai_completion_from_json(cJSON* completion_json) {
+    OpenAiCompletion *completion = openai_completion_new();
+    openai_completion_assign_from_json(completion, completion_json);
+    return completion;
+}
+
+OpenAiCompletion *openai_completion_from_json_string(char *json_string) {
+    return openai_completion_from_json(cJSON_Parse(json_string));
+}
+
+cJSON *openai_completion_to_json(OpenAiCompletion *completion) {
+    cJSON *completion_json = cJSON_CreateObject();
+    cJSON_AddStringToObject(completion_json, "id", completion->id);
+    cJSON_AddStringToObject(completion_json, "object", completion->object);
+    cJSON_AddNumberToObject(completion_json, "created", completion->created);
+    cJSON_AddStringToObject(completion_json, "model", completion->model);
+    cJSON *choices = cJSON_CreateArray();
+    cJSON_AddItemToObject(completion_json, "choices", choices);
+    for (int i = 0; completion->choices[i] != NULL; i++) {
+        cJSON_AddItemToArray(choices, openai_choice_to_json(completion->choices[i]));
+    }
+    cJSON_AddItemToObject(completion_json, "usage", openai_usage_to_json(completion->usage));
+    return completion_json;
 }
 
 typedef struct {
