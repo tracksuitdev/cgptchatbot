@@ -17,8 +17,12 @@ CGptChat *cgpt_chat_new() {
 }
 
 void cgpt_chat_free(CGptChat *chat) {
-    free_array((void **) chat->messages);
-    free_array((void **) chat->completions);
+    for (int i = 0; chat->messages[i] != NULL; i++) {
+        openai_message_free(chat->messages[i]);
+    }
+    for (int i = 0; chat->completions[i] != NULL; i++) {
+        openai_completion_free(chat->completions[i]);
+    }
     FREE(chat)
 }
 
