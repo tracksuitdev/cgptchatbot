@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include "chat.h"
 #include "util.h"
 #include "appdata.h"
@@ -17,11 +18,15 @@ CGptChat *cgpt_chat_new() {
 }
 
 void cgpt_chat_free(CGptChat *chat) {
-    for (int i = 0; chat->messages[i] != NULL; i++) {
-        openai_message_free(chat->messages[i]);
+    if (chat->messages != NULL) {
+        for (int i = 0; chat->messages[i] != NULL; i++) {
+            openai_message_free(chat->messages[i]);
+        }
     }
-    for (int i = 0; chat->completions[i] != NULL; i++) {
-        openai_completion_free(chat->completions[i]);
+    if (chat->completions != NULL) {
+        for (int i = 0; chat->completions[i] != NULL; i++) {
+            openai_completion_free(chat->completions[i]);
+        }
     }
     FREE(chat)
 }
@@ -81,9 +86,11 @@ FILE *open_chat_file(int id, char *mode) {
         return NULL;
     }
 
+    char chat_file_name[CGPT_MAX_FILE_PATH];
+    sprintf(chat_file_name, "%d.json", id);
+
     char chat_file_path[CGPT_MAX_FILE_PATH];
-    data_dir_path(chat_file_path);
-    snprintf(chat_file_path, CGPT_MAX_FILE_PATH, "%s/%d.json", chat_file_path, id);
+    file_path_in_data_dir(chat_file_name, chat_file_path);
     FILE *chat_file = fopen(chat_file_path, mode);
     return chat_file;
 }

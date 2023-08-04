@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <glib.h>
+#include <gio/gio.h>
+#include <glib/gstdio.h>
 #include "util.h"
 #include "appdata.h"
 
@@ -43,9 +46,7 @@ bool data_dir_exists() {
 
 static inline FILE *get_data_file(char *mode) {
     char file_path[CGPT_MAX_FILE_PATH];
-    data_dir_path(file_path);
-    strcat(file_path, "/");
-    strcat(file_path, DATA_FILE_NAME);
+    file_path_in_data_dir(DATA_FILE_NAME, file_path);
     FILE *file = fopen(file_path, mode);
     return file;
 }
@@ -84,18 +85,41 @@ bool remove_dir(const char *path) {
     return true;
 }
 
+int recursively_remove_directory(const gchar *path) {
+    GDir *dir;
+    const gchar *entry;
+
+    dir = g_dir_open(path, 0, NULL);
+
+    if (dir == NULL) {
+        // Directory not found or unable to open
+        return -1;
+    }
+
+    while ((entry = g_dir_read_name(dir)) != NULL) {
+        gchar *entry_path = g_build_filename(path, entry, NULL);
+        GFile *file = g_file_new_for_path(entry_path);
+        GFileType file_type = g_file_query_file_type(file, G_FILE_QUERY_INFO_NONE, NULL);
+
+        if (file_type == G_FILE_TYPE_DIRECTORY) {
+            recursively_remove_directory(entry_path);
+        } else {
+            unlink(entry_path);
+        }
+
+        g_free(entry_path);
+        g_object_unref(file);
+    }
+
+    g_dir_close(dir);
+    return g_rmdir(path);
+}
+
+
 bool remove_data_dir() {
     char dir_path[CGPT_MAX_FILE_PATH];
     data_dir_path(dir_path);
-
-    char file_path[CGPT_MAX_FILE_PATH];
-
-    strcpy(file_path, dir_path);
-    strcat(file_path, "/");
-    strcat(file_path, DATA_FILE_NAME);
-    remove(file_path);
-
-    return remove_dir(dir_path);
+    return recursively_remove_directory(dir_path) == 0;
 }
 
 APPDATA *read_data_file() {
@@ -136,6 +160,11 @@ bool save_api_key(const char *api_key) {
     return true;
 }
 
+void file_path_in_data_dir(const char *file_name, char *path) {
+    data_dir_path(path);
+    strcat(path, "/");
+    strcat(path, file_name);
+}
 
 
 

@@ -26,4 +26,6 @@ APPDATA *read_data_file();
 APPDATA *save_api_key_and_create_data(const char *api_key);
 bool save_api_key(const char *api_key);
 
+void file_path_in_data_dir(const char *file_name, char *path);
+
 #endif //CGPTCHATBOT_APPDATA_H

@@ -3,7 +3,6 @@
 #include "util.h"
 #include "cJSON.h"
 
-static const int MAX_LINE_LENGTH = 1000;
 static const int BUFFER_SIZE = 10000;
 
 void free_array(void **array) {
