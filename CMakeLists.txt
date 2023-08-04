@@ -13,7 +13,11 @@ link_directories(${GTK4_LIBRARY_DIRS})
 
 include_directories(lib/Unity-2.5.2/src)
 
-add_executable(cgptchatbot src/main.c src/openai.c src/openai.h src/cJSON.c src/cJSON.h src/util.h src/util.c src/appdata.c src/appdata.h src/chat.c src/chat.h)
+add_executable(cgptchatbot src/main.c src/openai.c src/openai.h src/cJSON.c src/cJSON.h src/util.h src/util.c src/appdata.c src/appdata.h src/chat.c src/chat.h
+        src/cgptchatbotapp.c
+        src/cgptchatbotapp.h
+        src/cgptchatbotwin.c
+        src/cgptchatbotwin.h)
 target_link_libraries(cgptchatbot ${GTK4_LIBRARIES})
 target_link_libraries(cgptchatbot CURL::libcurl)
 
