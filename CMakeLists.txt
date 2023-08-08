@@ -13,11 +13,23 @@ link_directories(${GTK4_LIBRARY_DIRS})
 
 include_directories(lib/Unity-2.5.2/src)
 
+set(GRESOURCE_C "${CMAKE_BINARY_DIR}/resources.c")
+add_custom_command(OUTPUT ${GRESOURCE_C}
+        COMMAND glib-compile-resources --target=${GRESOURCE_C} --generate-source ${CMAKE_SOURCE_DIR}/ui/cgptchatbot.gresource.xml
+        DEPENDS ${CMAKE_SOURCE_DIR}/ui/cgptchatbot.gresource.xml
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Compiling resources"
+        VERBATIM
+        )
+
 add_executable(cgptchatbot src/main.c src/openai.c src/openai.h src/cJSON.c src/cJSON.h src/util.h src/util.c src/appdata.c src/appdata.h src/chat.c src/chat.h
         src/cgptchatbotapp.c
         src/cgptchatbotapp.h
         src/cgptchatbotwin.c
-        src/cgptchatbotwin.h)
+        src/cgptchatbotwin.h
+        ${GRESOURCE_C}
+        ui/cgptchatbot.gresource.xml
+)
 target_link_libraries(cgptchatbot ${GTK4_LIBRARIES})
 target_link_libraries(cgptchatbot CURL::libcurl)
 
