@@ -1,8 +1,10 @@
 #include <gtk/gtk.h>
+#include <stdio.h>
 #include "cgptchatbotapp.h"
 #include "cgptchatbotwin.h"
 #include "appdata.h"
 #include "util.h"
+#include "cgptchatbotstartup.h"
 
 
 struct _CgptChatbotApp {
@@ -18,6 +20,10 @@ static void cgpt_chatbot_app_init(CgptChatbotApp *app) {
 static void cgpt_chatbot_app_activate(GApplication *app) {
     CgptChatbotAppWindow *win = cgpt_chatbot_app_window_new(CGPTCHATBOT_APP(app));
     gtk_window_present(GTK_WINDOW(win));
+    if (cgpt_global_appdata == NULL || cgpt_global_appdata->api_key == NULL) {
+        CgptChatbotStartup *startup = cgpt_chatbot_startup_new(win);
+        gtk_window_present(GTK_WINDOW(startup));
+    }
 }
 
 static void cgpt_chatbot_app_open(GApplication *app, GFile **files, gint n_files, const gchar *hint) {
@@ -32,6 +38,10 @@ static void cgpt_chatbot_app_open(GApplication *app, GFile **files, gint n_files
         cgpt_chatbot_app_window_open(win, files[i]);
     }
     gtk_window_present(GTK_WINDOW(win));
+    if (cgpt_global_appdata == NULL || cgpt_global_appdata->api_key == NULL) {
+        CgptChatbotStartup *startup = cgpt_chatbot_startup_new(win);
+        gtk_window_present(GTK_WINDOW(startup));
+    }
 }
 
 static void cgpt_chatbot_app_startup(GApplication *app) {
