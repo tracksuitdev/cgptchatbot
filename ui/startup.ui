@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+    <template class="CgptChatbotStartup" parent="GtkDialog">
+        <property name="title" translatable="yes">API KEY</property>
+        <property name="resizable">0</property>
+        <property name="modal">1</property>
+        <child internal-child="content_area">
+            <object class="GtkBox" id="content_area">
+                <child>
+                    <object class="GtkBox" id="box">
+                        <property name="orientation">vertical</property>
+                        <child>
+                            <object class="GtkLabel" id="label">
+                                <property name="label" translatable="yes">Please enter your API key:</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkEntry" id="entry">
+                                <property name="max-length">1000</property>
+                                <property name="activates-default">1</property>
+                            </object>
+                        </child>
+                        <child>
+                            <object class="GtkButton" id="save_button">
+                                <signal name="clicked" handler="save_button_clicked" />
+                                <property name="label" translatable="yes">Save</property>
+                                <property name="receives-default">1</property>
+                            </object>
+                        </child>
+                    </object>
+                </child>
+            </object>
+        </child>
+    </template>
+</interface>

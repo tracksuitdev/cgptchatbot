@@ -2,10 +2,11 @@
 #include "cgptchatbotapp.h"
 #include "cgptchatbotwin.h"
 #include "appdata.h"
+#include "util.h"
+
 
 struct _CgptChatbotApp {
     GtkApplication parent_instance;
-    APPDATA *appdata;
 };
 
 G_DEFINE_TYPE(CgptChatbotApp, cgpt_chatbot_app, GTK_TYPE_APPLICATION)
@@ -33,23 +34,18 @@ static void cgpt_chatbot_app_open(GApplication *app, GFile **files, gint n_files
     gtk_window_present(GTK_WINDOW(win));
 }
 
-static void preferences_activated(GSimpleAction *action, GVariant *parameter, gpointer app) {
-    g_print("Preferences activated\n");
-}
-
-static void quit_activated(GSimpleAction *action, GVariant *parameter, gpointer app) {
-    g_application_quit(G_APPLICATION(app));
-}
-
-static GActionEntry app_entries[] = {
-        {"preferences", preferences_activated, NULL, NULL, NULL},
-        {"quit",        quit_activated,        NULL, NULL, NULL}
-};
-
 static void cgpt_chatbot_app_startup(GApplication *app) {
     G_APPLICATION_CLASS(cgpt_chatbot_app_parent_class)->startup(app);
-    gtk_application_set_accels_for_action(GTK_APPLICATION(app), "app.quit", (const gchar *[]){"<Ctrl>Q", NULL});
-    g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries, G_N_ELEMENTS(app_entries), app);
+    if (!data_dir_exists()) {
+        create_data_dir();
+    } else {
+        init_appdata();
+    }
+}
+
+static void cgpt_chatbot_app_shutdown(GApplication *app) {
+    G_APPLICATION_CLASS(cgpt_chatbot_app_parent_class)->shutdown(app);
+    FREE(cgpt_global_appdata);
 }
 
 
@@ -57,6 +53,7 @@ static void cgpt_chatbot_app_class_init(CgptChatbotAppClass *class) {
     G_APPLICATION_CLASS(class)->startup = cgpt_chatbot_app_startup;
     G_APPLICATION_CLASS(class)->activate = cgpt_chatbot_app_activate;
     G_APPLICATION_CLASS(class)->open = cgpt_chatbot_app_open;
+    G_APPLICATION_CLASS(class)->shutdown = cgpt_chatbot_app_shutdown;
 }
 
 CgptChatbotApp *cgptchatbot_app_new(void) {

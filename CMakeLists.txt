@@ -29,6 +29,8 @@ add_executable(cgptchatbot src/main.c src/openai.c src/openai.h src/cJSON.c src/
         src/cgptchatbotwin.h
         ${GRESOURCE_C}
         ui/cgptchatbot.gresource.xml
+        src/cgptchatbotstartup.c
+        src/cgptchatbotstartup.h
 )
 target_link_libraries(cgptchatbot ${GTK4_LIBRARIES})
 target_link_libraries(cgptchatbot CURL::libcurl)

@@ -12,14 +12,12 @@ static void cgpt_chatbot_app_window_init(CgptChatbotAppWindow *win) {
 }
 
 static void cgpt_chatbot_app_window_class_init(CgptChatbotAppWindowClass *class) {
-    gtk_widget_class_set_template_from_resource(GTK_WIDGET_CLASS(class), "/org/tracksuitdev/cgptchatbot/window.ui");
+    gtk_widget_class_set_template_from_resource(GTK_WIDGET_CLASS(class), "/org/tracksuitdev/cgptchatbot/ui/window.ui");
     gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), CgptChatbotAppWindow, stack);
 }
 
 CgptChatbotAppWindow *cgpt_chatbot_app_window_new(CgptChatbotApp *app) {
-    return g_object_new(CGPT_CHATBOT_APP_WINDOW_TYPE,
-                        "application", app,
-                        NULL);
+    return g_object_new(CGPT_CHATBOT_APP_WINDOW_TYPE,"application", app, NULL);
 }
 
 void cgpt_chatbot_app_window_open(CgptChatbotAppWindow *win, GFile *file) {

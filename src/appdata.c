@@ -25,6 +25,8 @@ const int CGPT_MAX_FILE_PATH = 1024;
 static const char DATA_FILE_NAME[] = "config.txt";
 static const int MAX_LINE_LENGTH = 1000;
 
+APPDATA *cgpt_global_appdata = NULL;
+
 void data_dir_path(char *path) {
     char *home = getenv("HOME");
     snprintf(path, CGPT_MAX_FILE_PATH, "%s/%s", home, CGPT_DATA_DIR);
@@ -166,6 +168,9 @@ void file_path_in_data_dir(const char *file_name, char *path) {
     strcat(path, file_name);
 }
 
-
-
-
+void init_appdata() {
+    if (cgpt_global_appdata != NULL) {
+        FREE(cgpt_global_appdata)
+    }
+    cgpt_global_appdata = read_data_file();
+}

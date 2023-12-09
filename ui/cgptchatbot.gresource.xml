@@ -2,6 +2,6 @@
 <gresources>
     <gresource prefix="/org/tracksuitdev/cgptchatbot">
         <file preprocess="xml-stripblanks">ui/window.ui</file>
-        <file preprocess="xml-stripblanks">ui/menu.ui</file>
+        <file preprocess="xml-stripblanks">ui/startup.ui</file>
     </gresource>
 </gresources>
