@@ -11,4 +11,6 @@ G_DECLARE_FINAL_TYPE (CgptChatbotAppWindow, cgpt_chatbot_app_window, CGPTCHATBOT
 CgptChatbotAppWindow *cgpt_chatbot_app_window_new(CgptChatbotApp *app);
 void cgpt_chatbot_app_window_open(CgptChatbotAppWindow *win, GFile *file);
 
+GtkStack *cgpt_chatbot_app_window_get_stack(CgptChatbotAppWindow *win);
+
 #endif //CGPTCHATBOT_CGPTCHATBOTWIN_H

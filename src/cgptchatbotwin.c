@@ -20,6 +20,10 @@ CgptChatbotAppWindow *cgpt_chatbot_app_window_new(CgptChatbotApp *app) {
     return g_object_new(CGPT_CHATBOT_APP_WINDOW_TYPE,"application", app, NULL);
 }
 
+GtkStack *cgpt_chatbot_app_window_get_stack(CgptChatbotAppWindow *win) {
+    return win->stack;
+}
+
 void cgpt_chatbot_app_window_open(CgptChatbotAppWindow *win, GFile *file) {
 
 }

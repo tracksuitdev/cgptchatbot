@@ -44,8 +44,26 @@ static void cgpt_chatbot_app_open(GApplication *app, GFile **files, gint n_files
     }
 }
 
+static void new_chat(GSimpleAction *action, GVariant *parameter, gpointer app) {
+    GtkWidget *scrolled = gtk_scrolled_window_new();
+    gtk_widget_set_hexpand(scrolled, TRUE);
+    gtk_widget_set_vexpand(scrolled, TRUE);
+    gtk_widget_set_valign(scrolled, GTK_ALIGN_END);
+    GtkWidget *text_view = gtk_text_view_new();
+    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), TRUE);
+    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), text_view);
+    CgptChatbotAppWindow *win = CGPTCHATBOT_APP_WINDOW(gtk_application_get_active_window(GTK_APPLICATION(app)));
+    gtk_stack_add_titled(GTK_STACK(cgpt_chatbot_app_window_get_stack(win)),
+                         scrolled, "new_chat", "New Chat");
+}
+
+static GActionEntry app_entries[] = {
+        {"new", new_chat, NULL, NULL, NULL},
+};
+
 static void cgpt_chatbot_app_startup(GApplication *app) {
     G_APPLICATION_CLASS(cgpt_chatbot_app_parent_class)->startup(app);
+    g_action_map_add_action_entries(G_ACTION_MAP(app), app_entries, G_N_ELEMENTS(app_entries), app);
     if (!data_dir_exists()) {
         create_data_dir();
     } else {
