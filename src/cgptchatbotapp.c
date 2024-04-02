@@ -3,8 +3,8 @@
 #include "cgptchatbotapp.h"
 #include "cgptchatbotwin.h"
 #include "appdata.h"
-#include "util.h"
 #include "cgptchatbotstartup.h"
+#include "cgptchatbotchatbox.h"
 
 
 struct _CgptChatbotApp {
@@ -17,10 +17,19 @@ static void cgpt_chatbot_app_init(CgptChatbotApp *app) {
 
 }
 
+static void load_css() {
+    GtkCssProvider *provider = gtk_css_provider_new();
+    gtk_css_provider_load_from_resource(provider, "/org/tracksuitdev/cgptchatbot/ui/style.css");
+    gtk_style_context_add_provider_for_display(gdk_display_get_default(),
+                                               GTK_STYLE_PROVIDER(provider),
+                                               GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+}
+
 static void cgpt_chatbot_app_activate(GApplication *app) {
     CgptChatbotAppWindow *win = cgpt_chatbot_app_window_new(CGPTCHATBOT_APP(app));
     gtk_window_present(GTK_WINDOW(win));
-    if (cgpt_global_appdata == NULL || cgpt_global_appdata->api_key == NULL) {
+    load_css();
+    if (!cgpt_global_appdata_has_api_key()) {
         CgptChatbotStartup *startup = cgpt_chatbot_startup_new(win);
         gtk_window_present(GTK_WINDOW(startup));
     }
@@ -38,23 +47,18 @@ static void cgpt_chatbot_app_open(GApplication *app, GFile **files, gint n_files
         cgpt_chatbot_app_window_open(win, files[i]);
     }
     gtk_window_present(GTK_WINDOW(win));
-    if (cgpt_global_appdata == NULL || cgpt_global_appdata->api_key == NULL) {
+    if (!cgpt_global_appdata_has_api_key()) {
         CgptChatbotStartup *startup = cgpt_chatbot_startup_new(win);
         gtk_window_present(GTK_WINDOW(startup));
     }
+    load_css();
 }
 
 static void new_chat(GSimpleAction *action, GVariant *parameter, gpointer app) {
-    GtkWidget *scrolled = gtk_scrolled_window_new();
-    gtk_widget_set_hexpand(scrolled, TRUE);
-    gtk_widget_set_vexpand(scrolled, TRUE);
-    gtk_widget_set_valign(scrolled, GTK_ALIGN_END);
-    GtkWidget *text_view = gtk_text_view_new();
-    gtk_text_view_set_editable(GTK_TEXT_VIEW(text_view), TRUE);
-    gtk_scrolled_window_set_child(GTK_SCROLLED_WINDOW(scrolled), text_view);
+    CgptChatbotChatbox *chatbox = cgpt_chatbot_chatbox_new();
     CgptChatbotAppWindow *win = CGPTCHATBOT_APP_WINDOW(gtk_application_get_active_window(GTK_APPLICATION(app)));
     gtk_stack_add_titled(GTK_STACK(cgpt_chatbot_app_window_get_stack(win)),
-                         scrolled, "new_chat", "New Chat");
+                         GTK_WIDGET(chatbox), "new_chat", "New Chat");
 }
 
 static GActionEntry app_entries[] = {
@@ -73,7 +77,7 @@ static void cgpt_chatbot_app_startup(GApplication *app) {
 
 static void cgpt_chatbot_app_shutdown(GApplication *app) {
     G_APPLICATION_CLASS(cgpt_chatbot_app_parent_class)->shutdown(app);
-    FREE(cgpt_global_appdata);
+    cgpt_global_appdata_free();
 }
 
 

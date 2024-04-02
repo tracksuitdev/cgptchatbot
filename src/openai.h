@@ -36,10 +36,21 @@ void openai_model_list_assign_from_json_string(OpenAiModelList *model_list, char
 OpenAiModelList *openai_model_list_from_json_string(char* json_string);
 OpenAiModelList *openai_model_list_from_json(cJSON *model_list_json);
 
+/**
+ * Represents a message object from openai chat API
+ * https://platform.openai.com/docs/api-reference/chat/create
+ * https://platform.openai.com/docs/guides/text-generation/chat-completions-api
+ */
 typedef struct {
+    /**
+     * The role of the message. Can be "system", "user" and "assistant"
+     */
     char *role;
     char *name;
     char *function_call;
+    /**
+     * The content of the message
+     */
     char *content;
 } OpenAiMessage;
 OpenAiMessage *openai_message_new();

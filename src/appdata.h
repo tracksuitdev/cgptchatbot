@@ -1,6 +1,7 @@
 #ifndef CGPTCHATBOT_APPDATA_H
 #define CGPTCHATBOT_APPDATA_H
 #include <stdbool.h>
+#include "openai.h"
 
 /**
  * This module is responsible for managing the application data. Application data is stored in a directory named
@@ -19,9 +20,8 @@ extern const int CGPT_MAX_FILE_PATH;
  */
 typedef struct {
     char *api_key;
+    OPENAI_API *openai_api;
 } APPDATA;
-
-extern APPDATA *cgpt_global_appdata;
 
 void appdata_free(APPDATA *appdata);
 
@@ -73,6 +73,32 @@ bool save_api_key(const char *api_key);
  */
 void file_path_in_data_dir(const char *file_name, char *path);
 
+/**
+ * Initializes the cgpt_global_appdata struct with the data from the data file. If the struct is already initialized, it
+ * will be freed first. The openai_api field is also initialized with the OpenAI API URL and the API key.
+ */
 void init_appdata();
+
+/**
+ * Get the API key from the cgpt_global_appdata struct.
+ * @return the API key or NULL if the cgpt_global_appdata struct is NULL, this char pointer should not be freed
+ */
+char *cgpt_global_appdata_get_api_key();
+
+/**
+ * Get the OpenAI API from the cgpt_global_appdata struct.
+ * @return the OpenAI API or NULL if the cgpt_global_appdata struct is NULL, this pointer should not be freed
+ */
+OPENAI_API *cgpt_global_appdata_get_openai_api();
+
+/**
+ * Check if the cgpt_global_appdata struct has an API key.
+ */
+bool cgpt_global_appdata_has_api_key();
+
+/**
+ * Free the cgpt_global_appdata struct and all its fields.
+ */
+void cgpt_global_appdata_free();
 
 #endif //CGPTCHATBOT_APPDATA_H

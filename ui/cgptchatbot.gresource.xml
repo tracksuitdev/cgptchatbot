@@ -3,5 +3,7 @@
     <gresource prefix="/org/tracksuitdev/cgptchatbot">
         <file preprocess="xml-stripblanks">ui/window.ui</file>
         <file preprocess="xml-stripblanks">ui/startup.ui</file>
+        <file preprocess="xml-stripblanks">ui/chatbox.ui</file>
+        <file>ui/style.css</file>
     </gresource>
 </gresources>

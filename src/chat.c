@@ -6,6 +6,7 @@
 #include "util.h"
 #include "appdata.h"
 #include "cJSON.h"
+#include "openai.h"
 
 CGptChat *cgpt_chat_new() {
     CGptChat *chat = malloc(sizeof(CGptChat));
@@ -14,6 +15,7 @@ CGptChat *cgpt_chat_new() {
     chat->messages_count = 0;
     chat->completions = NULL;
     chat->completions_count = 0;
+    chat->model = NULL;
     return chat;
 }
 
@@ -28,11 +30,13 @@ void cgpt_chat_free(CGptChat *chat) {
             openai_completion_free(chat->completions[i]);
         }
     }
+    FREE(chat->model)
     FREE(chat)
 }
 
 void cgpt_chat_assign_from_json(CGptChat *chat, cJSON* chat_json) {
     chat->id = cjson_int_at(chat_json, "id");
+    chat->model = cjson_string_at(chat_json, "model");
 
     cJSON *messages = cJSON_GetObjectItemCaseSensitive(chat_json, "messages");
     size_t messages_count = cJSON_GetArraySize(messages);
@@ -112,25 +116,62 @@ int cgpt_chat_load(int id, CGptChat *chat) {
     return id;
 }
 
-cJSON *cgpt_chat_to_json(CGptChat *chat) {
-    cJSON *chat_json = cJSON_CreateObject();
-    cJSON_AddNumberToObject(chat_json, "id", chat->id);
-
-    cJSON *messages = cJSON_CreateArray();
-    cJSON_AddItemToObject(chat_json, "messages", messages);
-    for (int i = 0; i < chat->messages_count; i++) {
-        cJSON *message = openai_message_to_json(chat->messages[i]);
-        cJSON_AddItemToArray(messages, message);
-    }
-
+cJSON *cgpt_chat_completions_to_json(CGptChat *chat) {
     cJSON *completions = cJSON_CreateArray();
-    cJSON_AddItemToObject(chat_json, "completions", completions);
     for (int i = 0; i < chat->completions_count; i++) {
         cJSON *completion = openai_completion_to_json(chat->completions[i]);
         cJSON_AddItemToArray(completions, completion);
     }
+    return completions;
+}
+
+cJSON *cgpt_chat_messages_to_json(CGptChat *chat) {
+    cJSON *messages = cJSON_CreateArray();
+    for (int i = 0; i < chat->messages_count; i++) {
+        cJSON *message = openai_message_to_json(chat->messages[i]);
+        cJSON_AddItemToArray(messages, message);
+    }
+    return messages;
+}
+
+cJSON *cgpt_chat_to_json(CGptChat *chat) {
+    cJSON *chat_json = cJSON_CreateObject();
+    cJSON_AddNumberToObject(chat_json, "id", chat->id);
+    cJSON_AddStringToObject(chat_json, "model", chat->model);
+
+    cJSON *messages = cgpt_chat_messages_to_json(chat);
+    cJSON_AddItemToObject(chat_json, "messages", messages);
+
+    cJSON *completions = cgpt_chat_completions_to_json(chat);
+    cJSON_AddItemToObject(chat_json, "completions", completions);
 
     return chat_json;
+}
+
+char *cgpt_chat_create_completion_request_json(CGptChat *chat) {
+    cJSON *request = cJSON_CreateObject();
+    cJSON_AddStringToObject(request, "model", chat->model);
+
+    cJSON *messages = cgpt_chat_messages_to_json(chat);
+    cJSON_AddItemToObject(request, "messages", messages);
+
+    char *json = cJSON_Print(request);
+    cJSON_Delete(request);
+    return json;
+}
+
+OpenAiMessage *cgpt_chat_new_message(CGptChat *chat, char *role, char *content) {
+    OpenAiCompletion *completion = openai_completion_new();
+    OpenAiMessage *message = openai_message_new();
+    message->content = strdup(content);
+    message->role = strdup(role);
+    cgpt_chat_add_message(chat, message);
+    char *request_json = cgpt_chat_create_completion_request_json(chat);
+    openai_create_completion(cgpt_global_appdata_get_openai_api(), completion, request_json);
+    cgpt_chat_add_completion(chat, completion);
+    cgpt_chat_add_message(chat, completion->choices[0]->message);
+    FREE(request_json)
+    return completion->choices[0]->message;
 }
 
 bool cgpt_chat_save(CGptChat *chat) {
@@ -139,22 +180,7 @@ bool cgpt_chat_save(CGptChat *chat) {
         return false;
     }
 
-    cJSON *chat_json = cJSON_CreateObject();
-    cJSON_AddNumberToObject(chat_json, "id", chat->id);
-
-    cJSON *messages = cJSON_CreateArray();
-    cJSON_AddItemToObject(chat_json, "messages", messages);
-    for (int i = 0; i < chat->messages_count; i++) {
-        cJSON *message = openai_message_to_json(chat->messages[i]);
-        cJSON_AddItemToArray(messages, message);
-    }
-
-    cJSON *completions = cJSON_CreateArray();
-    cJSON_AddItemToObject(chat_json, "completions", completions);
-    for (int i = 0; i < chat->completions_count; i++) {
-        cJSON *completion = openai_completion_to_json(chat->completions[i]);
-        cJSON_AddItemToArray(completions, completion);
-    }
+    cJSON *chat_json = cgpt_chat_to_json(chat);
 
     char *json = cJSON_Print(chat_json);
     cJSON_Delete(chat_json);

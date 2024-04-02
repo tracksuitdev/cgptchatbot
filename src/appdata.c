@@ -8,6 +8,7 @@
 #include <glib/gstdio.h>
 #include "util.h"
 #include "appdata.h"
+#include "openai.h"
 
 #ifdef _WIN32
     #include <direct.h>
@@ -25,7 +26,7 @@ const int CGPT_MAX_FILE_PATH = 1024;
 static const char DATA_FILE_NAME[] = "config.txt";
 static const int MAX_LINE_LENGTH = 1000;
 
-APPDATA *cgpt_global_appdata = NULL;
+static APPDATA *cgpt_global_appdata = NULL;
 
 void data_dir_path(char *path) {
     char *home = getenv("HOME");
@@ -54,6 +55,12 @@ static inline FILE *get_data_file(char *mode) {
 }
 
 void appdata_free(APPDATA *appdata) {
+    if (appdata == NULL) {
+        return;
+    }
+    if (appdata->openai_api != NULL) {
+        openai_free(appdata->openai_api);
+    }
     FREE(appdata->api_key)
     FREE(appdata)
 }
@@ -173,4 +180,28 @@ void init_appdata() {
         FREE(cgpt_global_appdata)
     }
     cgpt_global_appdata = read_data_file();
+    cgpt_global_appdata->openai_api = openai_init("https://api.openai.com/v1/chat/", cgpt_global_appdata->api_key);
+}
+
+char *cgpt_global_appdata_get_api_key() {
+    if (cgpt_global_appdata == NULL) {
+        return NULL;
+    }
+    return cgpt_global_appdata->api_key;
+}
+
+OPENAI_API *cgpt_global_appdata_get_openai_api() {
+    if (cgpt_global_appdata == NULL) {
+        return NULL;
+    }
+    return cgpt_global_appdata->openai_api;
+}
+
+bool cgpt_global_appdata_has_api_key() {
+    return cgpt_global_appdata != NULL && cgpt_global_appdata->api_key != NULL;
+}
+
+void cgpt_global_appdata_free() {
+    appdata_free(cgpt_global_appdata);
+    cgpt_global_appdata = NULL;
 }

@@ -31,12 +31,24 @@ add_executable(cgptchatbot src/main.c src/openai.c src/openai.h src/cJSON.c src/
         ui/cgptchatbot.gresource.xml
         src/cgptchatbotstartup.c
         src/cgptchatbotstartup.h
+        src/cgptchatbotchatbox.c
+        src/cgptchatbotchatbox.h
 )
 target_link_libraries(cgptchatbot ${GTK4_LIBRARIES})
 target_link_libraries(cgptchatbot CURL::libcurl)
 
 add_executable(openai_test src/openai.c src/openai.h src/cJSON.c src/cJSON.h lib/Unity-2.5.2/src/unity.c lib/Unity-2.5.2/src/unity.h tests/test_openai.c src/util.h src/util.c tests/mock_server.c tests/mock_server.h)
-add_executable(appdata_test lib/Unity-2.5.2/src/unity.c lib/Unity-2.5.2/src/unity.h src/cJSON.c src/cJSON.h src/util.h src/util.c src/appdata.c src/appdata.h tests/test_appdata.c
+add_executable(appdata_test
+        lib/Unity-2.5.2/src/unity.c
+        lib/Unity-2.5.2/src/unity.h
+        src/cJSON.c src/cJSON.h
+        src/openai.h
+        src/openai.c
+        src/util.h
+        src/util.c
+        src/appdata.c
+        src/appdata.h
+        tests/test_appdata.c
         tests/test_util.c
         tests/test_util.h)
 add_executable(chat_test lib/Unity-2.5.2/src/unity.c lib/Unity-2.5.2/src/unity.h src/util.h src/util.c src/openai.c src/openai.h src/cJSON.c src/cJSON.h src/chat.c src/chat.h tests/test_chat.c
@@ -49,6 +61,7 @@ add_executable(chat_test lib/Unity-2.5.2/src/unity.c lib/Unity-2.5.2/src/unity.h
 target_link_libraries(openai_test CURL::libcurl)
 target_link_libraries(openai_test microhttpd)
 target_link_libraries(appdata_test ${GTK4_LIBRARIES})
+target_link_libraries(appdata_test CURL::libcurl)
 target_link_libraries(chat_test ${GTK4_LIBRARIES})
 target_link_libraries(chat_test CURL::libcurl)
 enable_testing()
