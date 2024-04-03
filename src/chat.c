@@ -34,7 +34,13 @@ void cgpt_chat_free(CGptChat *chat) {
     FREE(chat)
 }
 
-void cgpt_chat_assign_from_json(CGptChat *chat, cJSON* chat_json) {
+/**
+ * Assigns the values from the json object to the chat object.
+ * Will allocate memory for the messages and completions from the json object.
+ * @param chat The chat object.
+ * @param chat_json The json object.
+ */
+static void cgpt_chat_assign_from_json(CGptChat *chat, cJSON* chat_json) {
     chat->id = cjson_int_at(chat_json, "id");
     chat->model = cjson_string_at(chat_json, "model");
 
@@ -68,6 +74,38 @@ void cgpt_chat_assign_from_json(CGptChat *chat, cJSON* chat_json) {
     chat->completions_count = (int) completions_count;
 }
 
+static void cgpt_chat_add_completion(CGptChat *chat, OpenAiCompletion *completion) {
+    if (chat->completions == NULL) {
+        chat->completions = malloc(sizeof(OpenAiCompletion *) * 2);
+        chat->completions[0] = completion;
+        chat->completions[1] = NULL;
+        chat->completions_count = 1;
+        return;
+    }
+
+    int index = chat->completions_count;
+    chat->completions = realloc(chat->completions, sizeof(OpenAiCompletion *) * (index + 2));
+    chat->completions[index] = completion;
+    chat->completions[index + 1] = NULL;
+    chat->completions_count += 1;
+}
+
+static void cgpt_chat_add_message(CGptChat *chat, OpenAiMessage *message) {
+    if (chat->messages == NULL) {
+        chat->messages = malloc(sizeof(OpenAiMessage *) * 2);
+        chat->messages[0] = message;
+        chat->messages[1] = NULL;
+        chat->messages_count = 1;
+        return;
+    }
+
+    int index = chat->messages_count;
+    chat->messages = realloc(chat->messages, sizeof(OpenAiMessage *) * (index + 2));
+    chat->messages[index] = message;
+    chat->messages[index + 1] = NULL;
+    chat->messages_count += 1;
+}
+
 void cgpt_chat_assign_from_json_string(CGptChat *chat, char *json_string) {
     cJSON *chat_json = cJSON_Parse(json_string);
     cgpt_chat_assign_from_json(chat, chat_json);
@@ -85,7 +123,7 @@ CGptChat *cgpt_chat_from_json_string(char *json_string) {
     return chat;
 }
 
-FILE *open_chat_file(int id, char *mode) {
+static FILE *open_chat_file(int id, char *mode) {
     if (!data_dir_exists()) {
         return NULL;
     }
@@ -116,7 +154,7 @@ int cgpt_chat_load(int id, CGptChat *chat) {
     return id;
 }
 
-cJSON *cgpt_chat_completions_to_json(CGptChat *chat) {
+static cJSON *cgpt_chat_completions_to_json(CGptChat *chat) {
     cJSON *completions = cJSON_CreateArray();
     for (int i = 0; i < chat->completions_count; i++) {
         cJSON *completion = openai_completion_to_json(chat->completions[i]);
@@ -125,7 +163,7 @@ cJSON *cgpt_chat_completions_to_json(CGptChat *chat) {
     return completions;
 }
 
-cJSON *cgpt_chat_messages_to_json(CGptChat *chat) {
+static cJSON *cgpt_chat_messages_to_json(CGptChat *chat) {
     cJSON *messages = cJSON_CreateArray();
     for (int i = 0; i < chat->messages_count; i++) {
         cJSON *message = openai_message_to_json(chat->messages[i]);
@@ -191,36 +229,3 @@ bool cgpt_chat_save(CGptChat *chat) {
     return true;
 }
 
-bool cgpt_chat_add_completion(CGptChat *chat, OpenAiCompletion *completion) {
-    if (chat->completions == NULL) {
-        chat->completions = malloc(sizeof(OpenAiCompletion *) * 2);
-        chat->completions[0] = completion;
-        chat->completions[1] = NULL;
-        chat->completions_count = 1;
-        return true;
-    }
-
-    int index = chat->completions_count;
-    chat->completions = realloc(chat->completions, sizeof(OpenAiCompletion *) * (index + 2));
-    chat->completions[index] = completion;
-    chat->completions[index + 1] = NULL;
-    chat->completions_count += 1;
-    return true;
-}
-
-bool cgpt_chat_add_message(CGptChat *chat, OpenAiMessage *message) {
-    if (chat->messages == NULL) {
-        chat->messages = malloc(sizeof(OpenAiMessage *) * 2);
-        chat->messages[0] = message;
-        chat->messages[1] = NULL;
-        chat->messages_count = 1;
-        return true;
-    }
-
-    int index = chat->messages_count;
-    chat->messages = realloc(chat->messages, sizeof(OpenAiMessage *) * (index + 2));
-    chat->messages[index] = message;
-    chat->messages[index + 1] = NULL;
-    chat->messages_count += 1;
-    return true;
-}
